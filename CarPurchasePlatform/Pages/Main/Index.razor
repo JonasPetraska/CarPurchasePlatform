@@ -1,0 +1,203 @@
+﻿@page "/"
+
+@using ViewModels;
+@using Services;
+@using Models;
+
+@inject IManufacturerService _manufacturerService
+@inject IModelService _modelService 
+@inject IYearService _yearService 
+
+<style type="text/css">
+    form .row {
+        margin-top: 15px;
+    }
+</style>
+
+<RadzenTemplateForm Data="@_viewModel">
+    <div class="row">
+        <div class="col-md-6">
+            <RadzenFieldset Text="Automobilio informacija">
+                <div class="row">
+                    <div class="col-md-7 align-items-center d-flex">
+                        <RadzenLabel Text="Bendra skiriama suma (automobiliui, draudimui, paskolai ir pnš.)" />
+                    </div>
+                    <div class="col-md-5">
+                        <RadzenNumeric @bind-Value="_viewModel.MaxTotalPrice" Placeholder="Įveskite didžiausią skiriamą sumą" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-7 align-items-center d-flex">
+                        <RadzenLabel Text="Gamintojas" />
+                    </div>
+                    <div class="col-md-5">
+                        <RadzenDropDown @bind-Value="_viewModel.SelectedManufacturerName" AllowClear="true"
+                                        Placeholder="Pasirinkite gamintoją" Data="@_viewModel.Manufacturers"
+                                        style="width: 100%;" TextProperty="Name" ValueProperty="Name"
+                                        Change="@((args) => ManufacturerChanged(args))" AllowFiltering="true"
+                                        FilterOperator="StringFilterOperator.Contains"
+                                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-7 align-items-center d-flex">
+                        <RadzenLabel Text="Modelis" />
+                    </div>
+                    <div class="col-md-5">
+                        <RadzenDropDown @bind-Value="_viewModel.SelectedModelName" AllowClear="true"
+                                        Placeholder="Pasirinkite modelį" Data="@_viewModel.ManufacturerModels"
+                                        style="width: 100%;" TextProperty="Name" ValueProperty="Name"
+                                        AllowFiltering="true" FilterOperator="StringFilterOperator.Contains"
+                                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                        Change="@((args) => ModelChanged(args))" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-7 align-items-center d-flex">
+                        <RadzenLabel Text="Pagaminimo metai" />
+                    </div>
+                    <div class="col-md-5">
+                        <RadzenDropDown @bind-Value="_viewModel.SelectedYear" AllowClear="true"
+                                        Placeholder="Pasirinkite pagaminimo metus" Data="@_viewModel.ModelYears"
+                                        AllowFiltering="true" FilterOperator="StringFilterOperator.Contains"
+                                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                        style="width: 100%;" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-7 align-items-center d-flex">
+                        <RadzenLabel Text="Ar reikalingas draudimas?" />
+                    </div>
+                    <div class="col-md-5">
+                        <RadzenCheckBox @bind-Value=@_viewModel.IsInsuranceRequired />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-7 align-items-center d-flex">
+                        <RadzenLabel Text="Ar reikalinga automobilio istorijas ataskaita?" />
+                    </div>
+                    <div class="col-md-5">
+                        <RadzenCheckBox @bind-Value=@_viewModel.IsCarHistoryRequired />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-7 align-items-center d-flex">
+                        <RadzenLabel Text="Ar reikalinga paskola/lizingas?" />
+                    </div>
+                    <div class="col-md-5">
+                        <RadzenCheckBox @bind-Value=@_viewModel.IsLoanRequired />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-7 align-items-center d-flex">
+                        <RadzenLabel Text="Ar reikia paskaičiuoti registracijos mokestį apskaičiavimą?" />
+                    </div>
+                    <div class="col-md-5">
+                        <RadzenCheckBox @bind-Value=@_viewModel.IsRegistrationFeeCalculationRequired />
+                    </div>
+                </div>
+            </RadzenFieldset>
+        </div>
+        <div class="col-md-6" hidden="@(!_viewModel.IsLoanRequired && !_viewModel.IsInsuranceRequired)">
+            <RadzenFieldset Text="Draudimo informacija" Visible="@_viewModel.IsInsuranceRequired">
+                <div class="row">
+                    <div class="col-md-7 align-items-center d-flex">
+                        <RadzenLabel Text="Asmens kodas" />
+                    </div>
+                    <div class="col-md-5">
+                        <RadzenTextBox @bind-Value="_viewModel.PersonalNumber" Placeholder="Įveskite asmens kodą" />
+                    </div>
+                </div>
+            </RadzenFieldset>
+            <RadzenFieldset Text="Paskolos/lizingo informacija" Visible="@_viewModel.IsLoanRequired">
+
+            </RadzenFieldset>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-12 d-flex align-items-end justify-content-center" style="margin-top: 16px;">
+            <RadzenButton ButtonType="ButtonType.Submit" Icon="search" Text="Ieškoti" />
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+@code {
+
+    CompositionViewModel _viewModel;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _viewModel = new CompositionViewModel();
+        var manufacturersResult = await _manufacturerService.GetAsync();
+        if (manufacturersResult.ResponseType == Models.ErrorTypeEnum.Success)
+        {
+            _viewModel.Manufacturers = manufacturersResult.Content;
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    async void ManufacturerChanged(object newValue)
+    {
+        var newValueStr = (string)newValue;
+        if (String.IsNullOrEmpty(newValueStr))
+        {
+            _viewModel.ManufacturerModels = null;
+            _viewModel.SelectedModelName = null;
+            InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        var newManufacturer = _viewModel.Manufacturers.FirstOrDefault(x => x.Name == newValueStr);
+        if (newManufacturer == null)
+        {
+            _viewModel.ManufacturerModels = null;
+            _viewModel.SelectedModelName = null;
+            InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        var modelsResult = await _modelService.GetAsync(newManufacturer.Name);
+        if (modelsResult.ResponseType == ErrorTypeEnum.Success)
+        {
+            _viewModel.ManufacturerModels = modelsResult.Content;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    async void ModelChanged(object newValue)
+    {
+        var newValueStr = (string)newValue;
+        if (String.IsNullOrEmpty(newValueStr))
+        {
+            _viewModel.SelectedYear = 0;
+            _viewModel.ModelYears = null;
+            InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        var newModel = _viewModel.ManufacturerModels.FirstOrDefault(x => x.Name == newValueStr);
+        if (newModel == null)
+        {
+            _viewModel.SelectedYear = 0;
+            _viewModel.ModelYears = null;
+            InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        if(String.IsNullOrEmpty(_viewModel.SelectedManufacturerName))
+        {
+            _viewModel.SelectedYear = 0;
+            _viewModel.ModelYears = null;
+            InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        var yearsResult = await _yearService.GetAsync(_viewModel.SelectedManufacturerName, _viewModel.SelectedModelName);
+        if (yearsResult.ResponseType == ErrorTypeEnum.Success)
+        {
+            _viewModel.ModelYears = yearsResult.Content.Select(x => x.Value).ToList();
+            InvokeAsync(StateHasChanged);
+        }
+    }
+}
