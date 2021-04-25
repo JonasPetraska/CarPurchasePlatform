@@ -1,3 +1,5 @@
+using CarPurchasePlatform.Abstractions;
+using CarPurchasePlatform.Algorithms;
 using CarPurchasePlatform.Repositories;
 using CarPurchasePlatform.Services;
 using Microsoft.AspNetCore.Builder;
@@ -7,6 +9,7 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Radzen;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,11 +36,24 @@ namespace CarPurchasePlatform
             services.AddSingleton<IManufacturerRepository, InMemoryManufacturerRepository>();
             services.AddSingleton<IModelRepository, InMemoryModelRepository>();
 
-            services.AddSingleton<IManufacturerService, ManufacturerService>();
-            services.AddSingleton<IModelService, ModelService>();
+            services.AddSingleton<IManufacturerService, DefaultManufacturerService>();
+            services.AddSingleton<IModelService, DefaultModelService>();
 
             services.AddSingleton<IYearRepository, InMemoryYearRepository>();
-            services.AddSingleton<IYearService, YearService>();
+            services.AddSingleton<IYearService, DefaultYearService>();
+
+            services.AddSingleton<IPartnerRepository, JsonPartnerRepository>();
+            services.AddSingleton<IPartnerService, DefaultPartnerService>();
+
+            services.AddSingleton<IPartnerSchemaRepository, InMemoryPartnerSchemaRepository>();
+            services.AddSingleton<IPartnerSchemaService, DefaultPartnerSchemaService>();
+
+            services.AddSingleton<ILoggerService, ConsoleLoggerService>();
+
+            services.AddScoped<DialogService>();
+            services.AddScoped<NotificationService>();
+
+            services.AddScoped<IAlgorithm, ForwardChainingAlgorithm>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

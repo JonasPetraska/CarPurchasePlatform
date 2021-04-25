@@ -3,10 +3,16 @@
 @using ViewModels;
 @using Services;
 @using Models;
+@using Algorithms;
+@using Models.Algorithms;
+@using Abstractions; 
 
 @inject IManufacturerService _manufacturerService
 @inject IModelService _modelService 
 @inject IYearService _yearService 
+@inject IPartnerSchemaService _partnerSchemaService 
+@inject NotificationService _notificationService 
+@inject IAlgorithm _algorithm  
 
 <style type="text/css">
     form .row {
@@ -14,116 +20,250 @@
     }
 </style>
 
-<RadzenTemplateForm Data="@_viewModel">
+<RadzenTemplateForm Data="@_viewModel" Submit="@Search" 
+                    TItem="CompositionViewModel" OnInvalidSubmit="@SearchInvalid">
     <div class="row">
         <div class="col-md-6">
             <RadzenFieldset Text="Automobilio informacija">
                 <div class="row">
-                    <div class="col-md-7 align-items-center d-flex">
-                        <RadzenLabel Text="Bendra skiriama suma (automobiliui, draudimui, paskolai ir pnš.)" />
+                    <div class="col-md-6 align-items-center d-flex">
+                        <RadzenLabel Text="Bendra skiriama suma" />
                     </div>
-                    <div class="col-md-5">
-                        <RadzenNumeric @bind-Value="_viewModel.MaxTotalPrice" Placeholder="Įveskite didžiausią skiriamą sumą" />
+                    <div class="col-md-6">
+                        <RadzenNumeric Name="MaxTotalPrice" @bind-Value="_viewModel.MaxTotalPrice" 
+                                       ShowUpDown="false" AutoComplete="false" Style="width: 100%;" 
+                                       Placeholder="Įveskite didžiausią skiriamą sumą" />
+
+                        <RadzenRequiredValidator Component="MaxTotalPrice" 
+                                                 Text="Įveskite didžiausią skiriamą sumą" 
+                                                 Style="position: absolute"/>
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-7 align-items-center d-flex">
+                    <div class="col-md-6 align-items-center d-flex">
                         <RadzenLabel Text="Gamintojas" />
                     </div>
-                    <div class="col-md-5">
-                        <RadzenDropDown @bind-Value="_viewModel.SelectedManufacturerName" AllowClear="true"
+                    <div class="col-md-6">
+                        <RadzenDropDown Name="Manufacturer" @bind-Value="_viewModel.SelectedManufacturerName" AllowClear="true"
                                         Placeholder="Pasirinkite gamintoją" Data="@_viewModel.Manufacturers"
                                         style="width: 100%;" TextProperty="Name" ValueProperty="Name"
                                         Change="@((args) => ManufacturerChanged(args))" AllowFiltering="true"
                                         FilterOperator="StringFilterOperator.Contains"
                                         FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" />
+
+                        <RadzenRequiredValidator Component="Manufacturer"
+                                                 Text="Pasirinkite gamintoją."
+                                                 Style="position: absolute" />
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-7 align-items-center d-flex">
+                    <div class="col-md-6 align-items-center d-flex">
                         <RadzenLabel Text="Modelis" />
                     </div>
-                    <div class="col-md-5">
-                        <RadzenDropDown @bind-Value="_viewModel.SelectedModelName" AllowClear="true"
+                    <div class="col-md-6">
+                        <RadzenDropDown Name="Model" @bind-Value="_viewModel.SelectedModelName" AllowClear="true"
                                         Placeholder="Pasirinkite modelį" Data="@_viewModel.ManufacturerModels"
                                         style="width: 100%;" TextProperty="Name" ValueProperty="Name"
                                         AllowFiltering="true" FilterOperator="StringFilterOperator.Contains"
                                         FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                                         Change="@((args) => ModelChanged(args))" />
+
+                        <RadzenRequiredValidator Component="Model"
+                                                 Text="Pasirinkite modelį."
+                                                 Style="position: absolute" />
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-7 align-items-center d-flex">
+                    <div class="col-md-6 align-items-center d-flex">
                         <RadzenLabel Text="Pagaminimo metai" />
                     </div>
-                    <div class="col-md-5">
-                        <RadzenDropDown @bind-Value="_viewModel.SelectedYear" AllowClear="true"
+                    <div class="col-md-6">
+                        <RadzenDropDown Name="Year" @bind-Value="_viewModel.SelectedYear" AllowClear="true"
                                         Placeholder="Pasirinkite pagaminimo metus" Data="@_viewModel.ModelYears"
                                         AllowFiltering="true" FilterOperator="StringFilterOperator.Contains"
                                         FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                                         style="width: 100%;" />
+
+                        <RadzenRequiredValidator Component="Year"
+                                                 Text="Pasirinkite metus."
+                                                 Style="position: absolute" />
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-7 align-items-center d-flex">
+                    <div class="col-md-6 align-items-center d-flex">
                         <RadzenLabel Text="Ar reikalingas draudimas?" />
                     </div>
-                    <div class="col-md-5">
+                    <div class="col-md-6">
                         <RadzenCheckBox @bind-Value=@_viewModel.IsInsuranceRequired />
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-7 align-items-center d-flex">
+                    <div class="col-md-6 align-items-center d-flex">
                         <RadzenLabel Text="Ar reikalinga automobilio istorijas ataskaita?" />
                     </div>
-                    <div class="col-md-5">
+                    <div class="col-md-6">
                         <RadzenCheckBox @bind-Value=@_viewModel.IsCarHistoryRequired />
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-7 align-items-center d-flex">
+                    <div class="col-md-6 align-items-center d-flex">
                         <RadzenLabel Text="Ar reikalinga paskola/lizingas?" />
                     </div>
-                    <div class="col-md-5">
-                        <RadzenCheckBox @bind-Value=@_viewModel.IsLoanRequired />
+                    <div class="col-md-6">
+                        <RadzenCheckBox @bind-Value=@_viewModel.IsLoanLeaseRequired />
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-7 align-items-center d-flex">
-                        <RadzenLabel Text="Ar reikia paskaičiuoti registracijos mokestį apskaičiavimą?" />
+                    <div class="col-md-6 align-items-center d-flex">
+                        <RadzenLabel Text="Ar reikia paskaičiuoti registracijos mokestį?" />
                     </div>
-                    <div class="col-md-5">
+                    <div class="col-md-6">
                         <RadzenCheckBox @bind-Value=@_viewModel.IsRegistrationFeeCalculationRequired />
                     </div>
                 </div>
             </RadzenFieldset>
         </div>
-        <div class="col-md-6" hidden="@(!_viewModel.IsLoanRequired && !_viewModel.IsInsuranceRequired)">
+        <div class="col-md-6" hidden="@(!_viewModel.IsLoanLeaseRequired && !_viewModel.IsInsuranceRequired)">
             <RadzenFieldset Text="Draudimo informacija" Visible="@_viewModel.IsInsuranceRequired">
                 <div class="row">
-                    <div class="col-md-7 align-items-center d-flex">
-                        <RadzenLabel Text="Asmens kodas" />
+                    <div class="col-md-6 align-items-center d-flex">
+                        <RadzenLabel Text="Asmens kodas"/>
                     </div>
-                    <div class="col-md-5">
-                        <RadzenTextBox @bind-Value="_viewModel.PersonalNumber" Placeholder="Įveskite asmens kodą" />
+                    <div class="col-md-6">
+                        <RadzenTextBox Name="PersonalNumber" @bind-Value="_viewModel.PersonalNumber" Style="width: 100%;"
+                                       Placeholder="Įveskite asmens kodą" />
+
+                        <RadzenRequiredValidator Component="PersonalNumber"
+                                                 Text="Įveskite asmens kodą."
+                                                 Style="position: absolute" 
+                                                 Visible="@_viewModel.IsInsuranceRequired"/>
                     </div>
                 </div>
             </RadzenFieldset>
-            <RadzenFieldset Text="Paskolos/lizingo informacija" Visible="@_viewModel.IsLoanRequired">
+            <RadzenFieldset Text="Paskolos/lizingo informacija" Visible="@_viewModel.IsLoanLeaseRequired">
+                <div class="row">
+                    <div class="col-md-6 align-items-center d-flex">
+                        <RadzenLabel Text="Paskola/lizingas" />
+                    </div>
+                    <div class="col-md-6">
+                        <RadzenRadioButtonList Name="LoanLeaseSelection" 
+                                               @bind-Value=@(_viewModel.LoanLeaseSelection) 
+                                               TValue="int?" Change="@((args) => LoanLeaseChanged(args))">
+                            <Items>
+                                <RadzenRadioButtonListItem Text="Paskola" Value="1" TValue="int?" />
+                                <RadzenRadioButtonListItem Text="Lizingas" Value="2" TValue="int?" />
+                            </Items>
+                        </RadzenRadioButtonList>
 
+                        <RadzenRequiredValidator Component="LoanLeaseSelection"
+                                                 Text="Pasirinkite paskolą arba lizingą."
+                                                 Style="position: absolute"
+                                                 Visible="@_viewModel.IsLoanLeaseRequired" />
+                    </div>
+                </div>
+                <div hidden="@(!_viewModel.IsLoanVisible)">
+                    <div class="row">
+                        <div class="col-md-6 align-items-center d-flex">
+                            <RadzenLabel Text="Palūkanų norma nedidesnė nei" />
+                        </div>
+                        <div class="col-md-6">
+                            <RadzenNumeric Name="MaxLoanPercentage" @bind-Value="_viewModel.MaxLoanPercentage"
+                                           ShowUpDown="false" AutoComplete="false" Style="width: 100%;"
+                                           Placeholder="Metinė palūkanų norma %" />
+
+                            <RadzenRequiredValidator Component="MaxLoanPercentage"
+                                                     Text="Pasirinkite metinę palūkanų normą."
+                                                     Style="position: absolute"
+                                                     Visible="@_viewModel.IsLoanVisible" />
+
+                            <Radzen.Blazor.RadzenNumericRangeValidator Component="MaxLoanPercentage"
+                                                                       Text="Metinė palūkanų norma nuo 5 iki 100 procentų."
+                                                                       Style="position: absolute"
+                                                                       Min="5"
+                                                                       Max="100"
+                                                                       Visible="@_viewModel.IsLoanVisible" />
+                        </div>
+                    </div>
+                </div>
+                <div hidden="@(!_viewModel.IsLeaseVisible)">
+                    <div class="row">
+                        <div class="col-md-6 align-items-center d-flex">
+                            <RadzenLabel Text="Laikotarpis" />
+                        </div>
+                        <div class="col-md-6">
+                            <RadzenDropDown Name="LeasePeriod" @bind-Value="_viewModel.LeasePeriod" AllowClear="true"
+                                            Placeholder="Pasirinkite laikotarpį metais" Data="@_viewModel.LeasePeriods"
+                                            AllowFiltering="true" FilterOperator="StringFilterOperator.Contains"
+                                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                            style="width: 100%;">
+                                <Template Context="item">
+                                    @item metai
+                                </Template>
+                            </RadzenDropDown>
+
+                            <RadzenRequiredValidator Component="LeasePeriod"
+                                                     Text="Pasirinkite laikotarpį metais."
+                                                     Style="position: absolute"
+                                                     Visible="@_viewModel.IsLeaseVisible" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 align-items-center d-flex">
+                            <RadzenLabel Text="Pradinis įnašas" />
+                        </div>
+                        <div class="col-md-6">
+                            <RadzenDropDown Name="LeaseInitialDepositPct" @bind-Value="_viewModel.LeaseInitialDepositPct" 
+                                            AllowClear="true" Placeholder="Pasirinkite pradinę įmoką %" 
+                                            Data="@_viewModel.LeaseInitialDepositPcts"
+                                            AllowFiltering="true" FilterOperator="StringFilterOperator.Contains"
+                                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                            style="width: 100%;">
+                                <Template Context="item">
+                                    @item%
+                                </Template>
+                            </RadzenDropDown>
+
+                            <RadzenRequiredValidator Component="LeaseInitialDepositPct"
+                                                     Text="Pasirinkite pradinę įmoką %."
+                                                     Style="position: absolute"
+                                                     Visible="@_viewModel.IsLeaseVisible" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 align-items-center d-flex">
+                            <RadzenLabel Text="Likutinė vertė" />
+                        </div>
+                        <div class="col-md-6">
+                            <RadzenDropDown Name="LeaseLeftOverPct" @bind-Value="_viewModel.LeaseLeftOverPct" AllowClear="true"
+                                            Placeholder="Pasirinkite likutinę vertę %" Data="@_viewModel.LeaseLeftOverPcts"
+                                            AllowFiltering="true" FilterOperator="StringFilterOperator.Contains"
+                                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                            style="width: 100%;">
+                                <Template Context="item">
+                                    @item%
+                                </Template>
+                            </RadzenDropDown>
+
+                            <RadzenRequiredValidator Component="LeaseLeftOverPct"
+                                                     Text="Pasirinkite likutinę vertę %"
+                                                     Style="position: absolute"
+                                                     Visible="@_viewModel.IsLeaseVisible" />
+                        </div>
+                    </div>
+                </div>
             </RadzenFieldset>
         </div>
     </div>
     <div class="row justify-content-center">
         <div class="col-md-12 d-flex align-items-end justify-content-center" style="margin-top: 16px;">
-            <RadzenButton ButtonType="ButtonType.Submit" Icon="search" Text="Ieškoti" />
+            <RadzenButton ButtonType="ButtonType.Submit" Icon="search" Text="Ieškoti"/>
         </div>
     </div>
 </RadzenTemplateForm>
 
 @code {
 
-    CompositionViewModel _viewModel;
+        CompositionViewModel _viewModel;
 
     protected override async Task OnInitializedAsync()
     {
@@ -200,4 +340,109 @@
             InvokeAsync(StateHasChanged);
         }
     }
+
+    void LoanLeaseChanged(int? newValue)
+    {
+        if (!newValue.HasValue)
+        {
+            _viewModel.IsLeaseVisible = false;
+            _viewModel.IsLoanVisible = false;
+        }
+
+        var val = newValue.Value;
+        if (val == 1)
+        {
+            _viewModel.IsLoanVisible = true;
+            _viewModel.IsLeaseVisible = false;
+        }
+        else if (val == 2)
+        {
+            _viewModel.IsLoanVisible = false;
+            _viewModel.IsLeaseVisible = true;
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    async void Search(CompositionViewModel model)
+    {
+
+        var schemasResult = await _partnerSchemaService.GetAsync();
+        if (schemasResult.ResponseType != ErrorTypeEnum.Success)
+        {
+            _notificationService.Notify(NotificationSeverity.Error,
+                                        "Klaida.",
+                                        schemasResult.ErrorMessage);
+            return;
+        }
+
+        var schemas = schemasResult.Content;
+
+        var rules = new List<Rule>();
+        var facts = new List<string>();
+        var goals = new List<string>();
+
+        rules.Add(new Rule(schemas.First(x => x.PartnerType == PartnerTypeEnum.AutomobileSearch)));
+        facts.AddRange(schemas.First(x => x.PartnerType == PartnerTypeEnum.AutomobileSearch).Inputs.Select(x => x.Name).ToList());
+        goals.Add("Mileage");
+        goals.Add("Price");
+
+        if (model.IsCarHistoryRequired)
+        {
+            rules.Add(new Rule(schemas.First(x => x.PartnerType == PartnerTypeEnum.AutomobileHistory)));
+            goals.Add("Owners count");
+            goals.Add("Country");
+        }
+
+        if (model.IsInsuranceRequired)
+        {
+            rules.Add(new Rule(schemas.First(x => x.PartnerType == PartnerTypeEnum.Insurance)));
+            facts.Add("Personal code");
+            goals.Add("Yearly fee");
+        }
+
+        if (model.IsLoanLeaseRequired)
+        {
+            if (model.IsLoanVisible)
+            {
+                rules.Add(new Rule(schemas.First(x => x.PartnerType == PartnerTypeEnum.Loan)));
+                facts.Add("Max Loan Percentage");
+                goals.Add("Loan monthly fee");
+                goals.Add("Yearly percentage fee");
+                goals.Add("Time in years");
+            }
+            else if (model.IsLeaseVisible)
+            {
+                rules.Add(new Rule(schemas.First(x => x.PartnerType == PartnerTypeEnum.Lease)));
+                facts.Add("Period");
+                facts.Add("Initial deposit percentage");
+                facts.Add("Left over percentage");
+                goals.Add("Lease monthly fee");
+                goals.Add("Initial fee");
+                goals.Add("Left over");
+            }
+
+            if (!facts.Contains("Personal code"))
+                facts.Add("Personal code");
+        }
+
+        if (model.IsRegistrationFeeCalculationRequired)
+        {
+            rules.Add(new Rule(schemas.First(x => x.PartnerType == PartnerTypeEnum.Registration)));
+            goals.Add("Registration fee");
+        }
+
+        _algorithm.Init(rules, facts, goals, new ConsoleLoggerService());
+
+        var res = _algorithm.Execute();
+    }
+
+    void SearchInvalid(FormInvalidSubmitEventArgs args)
+    {
+        var errors = args.Errors;
+        //_notificationService.Notify(NotificationSeverity.Error,
+        //                            "Klaida.",
+        //                            string.Join(",", errors));
+    }
+
 }

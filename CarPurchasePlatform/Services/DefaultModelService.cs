@@ -7,23 +7,23 @@ using System.Threading.Tasks;
 
 namespace CarPurchasePlatform.Services
 {
-    public class YearService : IYearService
+    public class DefaultModelService : IModelService
     {
-        private readonly IYearRepository _repository;
+        private readonly IModelRepository _repository;
 
-        public YearService(IYearRepository repository)
+        public DefaultModelService(IModelRepository repository)
         {
             _repository = repository;
         }
 
-        public Task<Response<IEnumerable<Year>>> GetAsync()
+        public Task<Response<IEnumerable<Model>>> GetAsync()
         {
             return _repository.GetAsync();
         }
 
-        public Task<Response<IEnumerable<Year>>> GetAsync(string manufacturer, string model)
+        public Task<Response<IEnumerable<Model>>> GetAsync(string manufacturer)
         {
-            return _repository.GetAsync(manufacturer, model);
+            return _repository.GetAsync(manufacturer);
         }
     }
 }

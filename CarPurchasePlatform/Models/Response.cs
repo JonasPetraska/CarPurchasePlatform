@@ -22,6 +22,11 @@ namespace CarPurchasePlatform.Models
             ResponseType = ErrorTypeEnum.NoSuccess;
         }
 
+        public Response(bool isSuccess)
+        {
+            ResponseType = isSuccess ? ErrorTypeEnum.Success : ErrorTypeEnum.NoSuccess;
+        }
+
         protected Response()
         {
 
