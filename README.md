@@ -5,4 +5,4 @@ Panaudota iliustruoti pavyzdžiams rašant bakalaurinį darbą.
 
 Vilniaus Universitetas, Matematikos ir Informatikos fakultetas, Programų sistemų studijų programa.
 
-Jonas Petraška
+Jonas Petraška, 2021
