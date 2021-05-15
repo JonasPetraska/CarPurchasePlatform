@@ -514,13 +514,14 @@
                 return;
             }
 
-            //Transform semantic result into execution plans with concrete services
-            var serviceTypes = planningRes.SelectMany(x => x.Select(y => y.WebServiceType)).ToList();
 
-            _viewModel.CompositionPlan = string.Join(" -> ", serviceTypes.Select(x => EnumHelpers.GetDisplayName(x)).ToList());
+            _viewModel.CompositionPlan = string.Join(" -> ", planningRes.Select(x => $"[{string.Join(";", x.Select(y => EnumHelpers.GetDisplayName(y.WebServiceType)).ToList())}]").ToList());
             _viewModel.ShowCompositionPlan = true;
 
             InvokeAsync(StateHasChanged);
+
+            //Transform semantic result into execution plans with concrete services
+            var serviceTypes = planningRes.SelectMany(x => x.Select(y => y.WebServiceType)).ToList();
 
             //Get all web services
             var webServiceResult = await _partnerService.GetAsync();
