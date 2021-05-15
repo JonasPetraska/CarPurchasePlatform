@@ -21,6 +21,7 @@ namespace AutogidasServiceSample.Repositories
                 new VehicleListing("Audi", "Q5", 2017, "2T1BURHE5EC055199", "Black", 120000, 49000, "Petrol", true, "SUV", "DE", "LTU992"),
                 new VehicleListing("Audi", "Q7", 2021, "JTEES41A792119935", "Blue", 230, 85000, "Gasoline", false, "SUV", "DE", "ART221"),
                 new VehicleListing("Audi", "Q5", 2019, "4A3AC44G34E057728", "Orange", 55000, 65000, "Petrol", true, "SUV", "DE", "MMI221"),
+                new VehicleListing("Audi", "A6", 2011, "JTDZN3EU6E3336988", "Red", 358704, 6500, "Gasoline", true, "Saloon", "DE", "LRT882"),
 
                 new VehicleListing("Volkswagen", "Polo", 2015, "KL7CJLSB8FB030061", "Black", 250000, 8900, "Petrol", true, "Hatchback", "DE", "KTU221"),
                 new VehicleListing("Volkswagen", "Polo", 2015, "1J4GW58N11C529249", "Gray", 190000, 12000, "Petrol", true, "Hatchback", "CH", "VUT876"),
