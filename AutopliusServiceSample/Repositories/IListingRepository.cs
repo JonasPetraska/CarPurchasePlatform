@@ -9,6 +9,6 @@ namespace AutopliusServiceSample.Repositories
     public interface IListingRepository
     {
         Task<IEnumerable<Listing>> GetAsync();
-        Task<IEnumerable<Listing>> GetAsync(string manufacturer, string model, int year);
+        Task<Listing> GetAsync(string manufacturer, string model, int year);
     }
 }

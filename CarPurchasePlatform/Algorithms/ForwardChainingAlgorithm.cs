@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace CarPurchasePlatform.Algorithms
 {
-    public class ForwardChainingAlgorithm : IAlgorithm
+    public class ForwardChainingAlgorithm : IPlanningAlgorithm
     {
         //Services
         private ILoggerService _logger;
@@ -66,6 +66,10 @@ namespace CarPurchasePlatform.Algorithms
 
             if (state)
             {
+                //Get rid of redudant rules
+                var prodCopy = new List<Rule>(_productions);
+                _productions = _productions.Where(x => x.RightSide.Any(y => _goals.Contains(y)) || x.RightSide.Any(y => prodCopy.Any(z => z.LeftSide.Any(k => k == y)))).ToList();
+
                 if (_productions.Any())
                     _logger.Write($"achieved.");
                 else
@@ -130,7 +134,7 @@ namespace CarPurchasePlatform.Algorithms
 
             while (true)
             {
-                //If goal is in facts = end
+                //If goals is in facts = end
                 if (goals.All(x => GDB.Contains(x)))
                 {
                     if (iteration != 0)

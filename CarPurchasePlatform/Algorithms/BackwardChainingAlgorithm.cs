@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace CarPurchasePlatform.Algorithms
 {
-    public class BackwardChainingAlgorithm : IAlgorithm
+    public class BackwardChainingAlgorithm : IPlanningAlgorithm
     {
         //Services
         private ILoggerService _logger;
@@ -88,6 +88,9 @@ namespace CarPurchasePlatform.Algorithms
 
             if (state)
             {
+                var prodCopy = new List<Rule>(_productions);
+                _productions = _productions.Where(x => x.RightSide.Any(y => _goals.Contains(y)) || x.RightSide.Any(y => prodCopy.Any(z => z.LeftSide.Any(k => k == y)))).ToList();
+
                 if (_productions.Any())
                     _logger.Write($"achieved.");
                 else

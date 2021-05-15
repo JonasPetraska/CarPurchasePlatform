@@ -8,6 +8,6 @@ namespace AutopliusServiceSample.Services
 {
     public interface IListingService
     {
-        Task<IEnumerable<Listing>> GetAsync(string manufacturer, string model, int year);
+        Task<Listing> GetAsync(string manufacturer, string model, int year);
     }
 }

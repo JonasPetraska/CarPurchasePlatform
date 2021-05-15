@@ -7,11 +7,11 @@ namespace CarPurchasePlatform.Models.Algorithms
 {
     public class Rule
     {
-        public Rule(PartnerSchema schema)
+        public Rule(WebServiceSchema schema)
         {
             RightSide = schema.Outputs.Select(x => x.Name).ToList();
             LeftSide = schema.Inputs.Select(x => x.Name).ToList();
-            PartnerType = schema.PartnerType;
+            WebServiceType = schema.WebServiceType;
         }
 
         public int NumberNumeric { get; set; }
@@ -24,7 +24,7 @@ namespace CarPurchasePlatform.Models.Algorithms
         public bool Flag2 { get; set; }
 
         //For reference
-        public PartnerTypeEnum PartnerType { get; set; }
+        public WebServiceTypeEnum WebServiceType { get; set; }
 
         public override string ToString()
         {

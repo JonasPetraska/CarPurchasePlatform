@@ -42,7 +42,7 @@ namespace CarPurchasePlatform.ViewModels
         public string PersonalNumber { get; set; }
 
         //General
-        public double? MaxTotalPrice { get; set; }
+        //public double? MaxTotalPrice { get; set; }
 
         //Loan
         public double? MaxLoanPercentage { get; set; }
@@ -63,5 +63,14 @@ namespace CarPurchasePlatform.ViewModels
         public int? LoanLeaseSelection { get; set; }
         public bool IsLoanVisible { get; set; }
         public bool IsLeaseVisible { get; set; }
+        public bool ShowCompositionPlan { get; set; }
+        public bool ShowCompositionPlanInstances { get; set; }
+        public bool ShowCompositionExecutionResult { get; set; }
+
+        //Results
+        public string CompositionPlan { get; set; }
+        public WebServiceExecutionPlan SelectedPlan { get; set; }
+        public IEnumerable<WebServiceExecutionPlan> ServicePlans { get; set; }
+        public WebServiceExecutionResult ExecutionResult { get; set; }
     }
 }

@@ -9,7 +9,7 @@ namespace AutopliusServiceSample.Models
     {
         public Listing(string manufacturer, string model, int year, string vin, string colour, 
                        int mileage, double price, string fuelType, int engineSizeCM3, string type,
-                       string gearbox, string steeringWheelPosition)
+                       string gearbox, string steeringWheelPosition, string licensePlate)
         {
             Manufacturer = manufacturer;
             Model = model;
@@ -23,6 +23,7 @@ namespace AutopliusServiceSample.Models
             Type = type;
             Gearbox = gearbox;
             SteeringWheelPosition = steeringWheelPosition;
+            LicensePlate = licensePlate;
         }
 
         public string Manufacturer { get; set; }
@@ -37,5 +38,6 @@ namespace AutopliusServiceSample.Models
         public string Type { get; set; }
         public string Gearbox { get; set; }
         public string SteeringWheelPosition { get; set; }
+        public string LicensePlate { get; set; }
     }
 }

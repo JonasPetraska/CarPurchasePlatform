@@ -15,7 +15,7 @@ namespace AutopliusServiceSample.Services
             _repository = repository;
         }
 
-        public Task<IEnumerable<Listing>> GetAsync(string manufacturer, string model, int year)
+        public Task<Listing> GetAsync(string manufacturer, string model, int year)
         {
             return _repository.GetAsync(manufacturer, model, year);
         }

@@ -5,40 +5,53 @@
 @using Models;
 @using Algorithms;
 @using Models.Algorithms;
-@using Abstractions; 
+@using Abstractions;
+@using Newtonsoft.Json;
+@using Helpers;
+@using Extensions; 
 
 @inject IManufacturerService _manufacturerService
-@inject IModelService _modelService 
-@inject IYearService _yearService 
-@inject IPartnerSchemaService _partnerSchemaService 
-@inject NotificationService _notificationService 
-@inject IAlgorithm _algorithm  
+@inject IModelService _modelService
+@inject IYearService _yearService
+@inject IWebServiceSchemaService _partnerSchemaService
+@inject NotificationService _notificationService
+@inject IPlanningAlgorithm _algorithm
+@inject IWebServiceService _partnerService
+@inject IPlanExecutionerService _executionerService
 
 <style type="text/css">
     form .row {
         margin-top: 15px;
     }
+
+    table, th, td {
+        border: 1px solid black;
+    }
+
+    td, th {
+        padding: 3px;
+    }
 </style>
 
-<RadzenTemplateForm Data="@_viewModel" Submit="@Search" 
-                    TItem="CompositionViewModel" OnInvalidSubmit="@SearchInvalid">
+<RadzenTemplateForm Data="@_viewModel" Submit="@Search"
+                    TItem="CompositionViewModel" Style="margin-bottom: 30px;">
     <div class="row">
         <div class="col-md-6">
             <RadzenFieldset Text="Automobilio informacija">
-                <div class="row">
-                    <div class="col-md-6 align-items-center d-flex">
-                        <RadzenLabel Text="Bendra skiriama suma" />
-                    </div>
-                    <div class="col-md-6">
-                        <RadzenNumeric Name="MaxTotalPrice" @bind-Value="_viewModel.MaxTotalPrice" 
-                                       ShowUpDown="false" AutoComplete="false" Style="width: 100%;" 
-                                       Placeholder="Įveskite didžiausią skiriamą sumą" />
+                @*<div class="row">
+                        <div class="col-md-6 align-items-center d-flex">
+                            <RadzenLabel Text="Bendra skiriama suma" />
+                        </div>
+                        <div class="col-md-6">
+                            <RadzenNumeric Name="MaxTotalPrice" @bind-Value="_viewModel.MaxTotalPrice"
+                                           ShowUpDown="false" AutoComplete="false" Style="width: 100%;"
+                                           Placeholder="Įveskite didžiausią skiriamą sumą" />
 
-                        <RadzenRequiredValidator Component="MaxTotalPrice" 
-                                                 Text="Įveskite didžiausią skiriamą sumą" 
-                                                 Style="position: absolute"/>
-                    </div>
-                </div>
+                            <RadzenRequiredValidator Component="MaxTotalPrice"
+                                                     Text="Įveskite didžiausią skiriamą sumą"
+                                                     Style="position: absolute" />
+                        </div>
+                    </div>*@
                 <div class="row">
                     <div class="col-md-6 align-items-center d-flex">
                         <RadzenLabel Text="Gamintojas" />
@@ -80,8 +93,6 @@
                     <div class="col-md-6">
                         <RadzenDropDown Name="Year" @bind-Value="_viewModel.SelectedYear" AllowClear="true"
                                         Placeholder="Pasirinkite pagaminimo metus" Data="@_viewModel.ModelYears"
-                                        AllowFiltering="true" FilterOperator="StringFilterOperator.Contains"
-                                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                                         style="width: 100%;" />
 
                         <RadzenRequiredValidator Component="Year"
@@ -127,7 +138,7 @@
             <RadzenFieldset Text="Draudimo informacija" Visible="@_viewModel.IsInsuranceRequired">
                 <div class="row">
                     <div class="col-md-6 align-items-center d-flex">
-                        <RadzenLabel Text="Asmens kodas"/>
+                        <RadzenLabel Text="Asmens kodas" />
                     </div>
                     <div class="col-md-6">
                         <RadzenTextBox Name="PersonalNumber" @bind-Value="_viewModel.PersonalNumber" Style="width: 100%;"
@@ -135,8 +146,8 @@
 
                         <RadzenRequiredValidator Component="PersonalNumber"
                                                  Text="Įveskite asmens kodą."
-                                                 Style="position: absolute" 
-                                                 Visible="@_viewModel.IsInsuranceRequired"/>
+                                                 Style="position: absolute"
+                                                 Visible="@_viewModel.IsInsuranceRequired" />
                     </div>
                 </div>
             </RadzenFieldset>
@@ -146,8 +157,8 @@
                         <RadzenLabel Text="Paskola/lizingas" />
                     </div>
                     <div class="col-md-6">
-                        <RadzenRadioButtonList Name="LoanLeaseSelection" 
-                                               @bind-Value=@(_viewModel.LoanLeaseSelection) 
+                        <RadzenRadioButtonList Name="LoanLeaseSelection"
+                                               @bind-Value=@(_viewModel.LoanLeaseSelection)
                                                TValue="int?" Change="@((args) => LoanLeaseChanged(args))">
                             <Items>
                                 <RadzenRadioButtonListItem Text="Paskola" Value="1" TValue="int?" />
@@ -193,8 +204,6 @@
                         <div class="col-md-6">
                             <RadzenDropDown Name="LeasePeriod" @bind-Value="_viewModel.LeasePeriod" AllowClear="true"
                                             Placeholder="Pasirinkite laikotarpį metais" Data="@_viewModel.LeasePeriods"
-                                            AllowFiltering="true" FilterOperator="StringFilterOperator.Contains"
-                                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                                             style="width: 100%;">
                                 <Template Context="item">
                                     @item metai
@@ -212,11 +221,9 @@
                             <RadzenLabel Text="Pradinis įnašas" />
                         </div>
                         <div class="col-md-6">
-                            <RadzenDropDown Name="LeaseInitialDepositPct" @bind-Value="_viewModel.LeaseInitialDepositPct" 
-                                            AllowClear="true" Placeholder="Pasirinkite pradinę įmoką %" 
+                            <RadzenDropDown Name="LeaseInitialDepositPct" @bind-Value="_viewModel.LeaseInitialDepositPct"
+                                            AllowClear="true" Placeholder="Pasirinkite pradinę įmoką %"
                                             Data="@_viewModel.LeaseInitialDepositPcts"
-                                            AllowFiltering="true" FilterOperator="StringFilterOperator.Contains"
-                                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                                             style="width: 100%;">
                                 <Template Context="item">
                                     @item%
@@ -236,8 +243,6 @@
                         <div class="col-md-6">
                             <RadzenDropDown Name="LeaseLeftOverPct" @bind-Value="_viewModel.LeaseLeftOverPct" AllowClear="true"
                                             Placeholder="Pasirinkite likutinę vertę %" Data="@_viewModel.LeaseLeftOverPcts"
-                                            AllowFiltering="true" FilterOperator="StringFilterOperator.Contains"
-                                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                                             style="width: 100%;">
                                 <Template Context="item">
                                     @item%
@@ -256,14 +261,67 @@
     </div>
     <div class="row justify-content-center">
         <div class="col-md-12 d-flex align-items-end justify-content-center" style="margin-top: 16px;">
-            <RadzenButton ButtonType="ButtonType.Submit" Icon="search" Text="Ieškoti"/>
+            <RadzenButton ButtonType="ButtonType.Submit" Icon="search" Text="Ieškoti" />
         </div>
     </div>
 </RadzenTemplateForm>
 
+@if (_viewModel.ShowCompositionPlan)
+{
+    <RadzenCard>
+        <b>Sugeneruotas planas:</b> @_viewModel.CompositionPlan
+    </RadzenCard>
+}
+
+@if (_viewModel.ShowCompositionPlanInstances)
+{
+    <RadzenCard Style="margin-top: 10px;">
+        <p style="margin-left: auto; margin-right: auto;"><b>Kompozicijos</b></p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Kompozicija</th>
+                    <th>Balas</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var plan in _viewModel.ServicePlans.OrderByDescending(x => x.Score))
+                {
+                    <tr>
+                        <td>@string.Join(" -> ", plan.Steps.SelectMany(x => x.Services.Select(y => y.Name))).Trim()</td>
+                        <td>@plan.Score</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </RadzenCard>
+
+    <RadzenCard Style="margin-top: 10px;">
+        <p style="margin-left: auto; margin-right: auto;"><b>Pasirinkta kompozicija</b></p>
+        @string.Join(" -> ", _viewModel.SelectedPlan.Steps.SelectMany(x => x.Services.Select(y => y.Name))).Trim() su balu: @_viewModel.SelectedPlan.Score
+    </RadzenCard>
+}
+
+@if (_viewModel.ShowCompositionExecutionResult)
+{
+    <RadzenCard Style="margin-top: 20px; margin-bottom: 30px;">
+        <p style="margin-left: auto; margin-right: auto;"><b>Vykdymo rezultatai</b></p>
+        @foreach(var result in _viewModel.ExecutionResult.Results)
+        {
+            <RadzenCard Style="margin-top: 10px;">
+                <p style="margin-left: auto; margin-right: auto;"><b>@EnumHelpers.GetDisplayName(result.Type)</b></p>
+                @foreach(var obj in result.Objects)
+                {
+                    <p><b>@string.Format("{0}{1}", obj.Name[0].ToString().ToUpper(), obj.Name.Substring(1)).FromCamelCase()</b> - @(obj.Value.ToLower() == "true" || obj.Value.ToLower() == "false" ? (obj.Value.ToLower() == "true" ? "Taip" : "Ne") : obj.Value)</p>
+                }
+            </RadzenCard>
+        }
+    </RadzenCard>
+}
+
 @code {
 
-        CompositionViewModel _viewModel;
+    CompositionViewModel _viewModel;
 
     protected override async Task OnInitializedAsync()
     {
@@ -325,7 +383,7 @@
             return;
         }
 
-        if(String.IsNullOrEmpty(_viewModel.SelectedManufacturerName))
+        if (String.IsNullOrEmpty(_viewModel.SelectedManufacturerName))
         {
             _viewModel.SelectedYear = 0;
             _viewModel.ModelYears = null;
@@ -366,83 +424,236 @@
 
     async void Search(CompositionViewModel model)
     {
+        try
+        {
+            var parameters = new Dictionary<string, string>();
 
-        var schemasResult = await _partnerSchemaService.GetAsync();
-        if (schemasResult.ResponseType != ErrorTypeEnum.Success)
+            //Get all partner schemas (semantic input output schemas)
+            var schemasResult = await _partnerSchemaService.GetAsync();
+            if (schemasResult.ResponseType != ErrorTypeEnum.Success)
+            {
+                _notificationService.Notify(NotificationSeverity.Error,
+                                            "Klaida.",
+                                            schemasResult.ErrorMessage);
+                return;
+            }
+
+            var schemas = schemasResult.Content;
+
+            //Get a composite service by employing FC/BC on service type definitions
+            var facts = new List<string>();
+            var goals = new List<string>();
+
+            facts.AddRange(schemas.First(x => x.WebServiceType == WebServiceTypeEnum.AutomobileSearch).Inputs.Select(x => x.Name).ToList());
+            goals.Add("Mileage");
+            goals.Add("Price");
+
+            parameters.Add("Manufacturer", _viewModel.SelectedManufacturerName);
+            parameters.Add("Model", _viewModel.SelectedModelName);
+            parameters.Add("Year", _viewModel.SelectedYear.ToString());
+
+            if (model.IsCarHistoryRequired)
+            {
+                goals.Add("OwnersCount");
+                goals.Add("Country");
+            }
+
+            if (model.IsInsuranceRequired)
+            {
+                facts.Add("PersonalCode");
+                goals.Add("YearlyFee");
+
+                parameters.Add("PersonalCode", _viewModel.PersonalNumber);
+            }
+
+            if (model.IsLoanLeaseRequired)
+            {
+                if (model.IsLoanVisible)
+                {
+                    facts.Add("MaxLoanPercentage");
+                    goals.Add("LoanMonthlyFee");
+                    goals.Add("YearlyPercentageFee");
+                    goals.Add("TimeInYears");
+
+                    parameters.Add("MaxLoanPercentage", _viewModel.MaxLoanPercentage.ToString());
+                }
+                else if (model.IsLeaseVisible)
+                {
+                    facts.Add("Period");
+                    facts.Add("InitialDepositPercentage");
+                    facts.Add("LeftOverPercentage");
+
+                    goals.Add("LeaseMonthlyFee");
+                    goals.Add("InitialFee");
+                    goals.Add("LeftOver");
+
+                    parameters.Add("Period", _viewModel.LeasePeriod.ToString());
+                    parameters.Add("InitialDepositPercentage", _viewModel.LeaseInitialDepositPct.ToString());
+                    parameters.Add("LeftOverPercentage", _viewModel.LeaseLeftOverPct.ToString());
+                }
+
+                if (!facts.Contains("PersonalCode"))
+                {
+                    facts.Add("PersonalCode");
+                    parameters.Add("PersonalCode", _viewModel.PersonalNumber);
+                }
+            }
+
+            if (model.IsRegistrationFeeCalculationRequired)
+                goals.Add("RegistrationFee");
+
+            //User FC/BC to produce a plan
+            _algorithm.Init(schemas.Select(x => new Rule(x)).ToList(), facts, goals, new ConsoleLoggerService());
+
+            var planningRes = _algorithm.Execute();
+            if (planningRes == null)
+            {
+                _notificationService.Notify(NotificationSeverity.Error,
+                                            "Klaida.",
+                                            "Planavimo klaida.");
+                return;
+            }
+
+            //Transform semantic result into execution plans with concrete services
+            var serviceTypes = planningRes.SelectMany(x => x.Select(y => y.WebServiceType)).ToList();
+
+            _viewModel.CompositionPlan = string.Join(" -> ", serviceTypes.Select(x => EnumHelpers.GetDisplayName(x)).ToList());
+            _viewModel.ShowCompositionPlan = true;
+
+            InvokeAsync(StateHasChanged);
+
+            //Get all web services
+            var webServiceResult = await _partnerService.GetAsync();
+            if (webServiceResult.ResponseType != ErrorTypeEnum.Success)
+            {
+                _notificationService.Notify(NotificationSeverity.Error,
+                                            "Klaida.",
+                                            webServiceResult.ErrorMessage);
+                return;
+            }
+
+            var webServices = webServiceResult.Content;
+
+            //Normalize the solutions
+            var partialSolutions = new List<KeyValuePair<WebServiceTypeEnum, WebService>>();
+            var searchNode = new KeyValuePair<WebServiceTypeEnum, IEnumerable<WebService>>(WebServiceTypeEnum.AutomobileSearch, webServices.Where(x => x.Type == WebServiceTypeEnum.AutomobileSearch).ToList());
+
+            foreach (var service in searchNode.Value)
+            {
+                var chain = GenerateChain(0, service, webServices, serviceTypes.ToArray());
+                partialSolutions.AddRange(chain);
+            }
+
+            var solutions = new List<List<KeyValuePair<WebServiceTypeEnum, WebService>>>();
+            var currentSol = new KeyValuePair<WebServiceTypeEnum, WebService>[serviceTypes.Count];
+            for (int i = 0; i < serviceTypes.Count; i++)
+                currentSol[i] = new KeyValuePair<WebServiceTypeEnum, WebService>(serviceTypes[i], null);
+
+            foreach (var partialSolution in partialSolutions)
+            {
+                var solType = partialSolution.Key;
+                currentSol[serviceTypes.IndexOf(solType)] = partialSolution;
+
+                if (partialSolution.Key == serviceTypes.Last() && currentSol.Any())
+                {
+                    //Fill in the empty spots if needed
+                    if (currentSol.Any(x => x.Value == null))
+                        for (int i = 0; i < currentSol.Length; i++)
+                            if (currentSol[i].Value == null)
+                                currentSol[i] = new KeyValuePair<WebServiceTypeEnum, WebService>(currentSol[i].Key, solutions.Last()[i].Value);
+
+                    solutions.Add(currentSol.ToList());
+                    currentSol = new KeyValuePair<WebServiceTypeEnum, WebService>[serviceTypes.Count];
+                    for (int i = 0; i < serviceTypes.Count; i++)
+                        currentSol[i] = new KeyValuePair<WebServiceTypeEnum, WebService>(serviceTypes[i], null);
+                }
+            }
+
+            if (currentSol.Any(x => x.Value != null))
+            {
+                solutions.Add(currentSol.ToList());
+                currentSol = new KeyValuePair<WebServiceTypeEnum, WebService>[serviceTypes.Count];
+            }
+
+            //Produce execution plans
+            var plans = new List<WebServiceExecutionPlan>();
+            foreach (var solution in solutions)
+            {
+                var plan = new WebServiceExecutionPlan();
+                var steps = new WebServiceExecutionPlanStep[planningRes.Count()];
+                for (int i = 0; i < steps.Length; i++)
+                    steps[i] = new WebServiceExecutionPlanStep() { Step = i + 1 };
+
+                foreach (var service in solution)
+                {
+                    var itemInPlan = planningRes.FirstOrDefault(x => x.Any(y => y.WebServiceType == service.Key));
+                    var indexInPlan = planningRes.ToList().IndexOf(itemInPlan);
+
+                    steps[indexInPlan].Services.Add(service.Value);
+                }
+
+                plan.Steps = steps.ToList();
+                plans.Add(plan);
+            }
+
+            //Get best solution
+            var maxQoSScore = plans.Max(x => x.Score);
+            var planWithMaxQoSScore = plans.FirstOrDefault(x => x.Score == maxQoSScore);
+
+            _viewModel.SelectedPlan = planWithMaxQoSScore;
+            _viewModel.ServicePlans = plans;
+            _viewModel.ShowCompositionPlanInstances = true;
+
+            InvokeAsync(StateHasChanged);
+
+            //Collect parameters
+            var planInstance = JsonConvert.DeserializeObject<WebServiceExecutionPlanInstance>(JsonConvert.SerializeObject(planWithMaxQoSScore));
+            planInstance.Parameters = parameters;
+
+            var executionResult = await _executionerService.ExecuteAsync(planInstance);
+            _viewModel.ExecutionResult = executionResult;
+            _viewModel.ShowCompositionExecutionResult = true;
+            InvokeAsync(StateHasChanged);
+
+        }
+        catch (Exception ex)
         {
             _notificationService.Notify(NotificationSeverity.Error,
                                         "Klaida.",
-                                        schemasResult.ErrorMessage);
+                                        ex.Message);
             return;
         }
-
-        var schemas = schemasResult.Content;
-
-        var rules = new List<Rule>();
-        var facts = new List<string>();
-        var goals = new List<string>();
-
-        rules.Add(new Rule(schemas.First(x => x.PartnerType == PartnerTypeEnum.AutomobileSearch)));
-        facts.AddRange(schemas.First(x => x.PartnerType == PartnerTypeEnum.AutomobileSearch).Inputs.Select(x => x.Name).ToList());
-        goals.Add("Mileage");
-        goals.Add("Price");
-
-        if (model.IsCarHistoryRequired)
-        {
-            rules.Add(new Rule(schemas.First(x => x.PartnerType == PartnerTypeEnum.AutomobileHistory)));
-            goals.Add("Owners count");
-            goals.Add("Country");
-        }
-
-        if (model.IsInsuranceRequired)
-        {
-            rules.Add(new Rule(schemas.First(x => x.PartnerType == PartnerTypeEnum.Insurance)));
-            facts.Add("Personal code");
-            goals.Add("Yearly fee");
-        }
-
-        if (model.IsLoanLeaseRequired)
-        {
-            if (model.IsLoanVisible)
-            {
-                rules.Add(new Rule(schemas.First(x => x.PartnerType == PartnerTypeEnum.Loan)));
-                facts.Add("Max Loan Percentage");
-                goals.Add("Loan monthly fee");
-                goals.Add("Yearly percentage fee");
-                goals.Add("Time in years");
-            }
-            else if (model.IsLeaseVisible)
-            {
-                rules.Add(new Rule(schemas.First(x => x.PartnerType == PartnerTypeEnum.Lease)));
-                facts.Add("Period");
-                facts.Add("Initial deposit percentage");
-                facts.Add("Left over percentage");
-                goals.Add("Lease monthly fee");
-                goals.Add("Initial fee");
-                goals.Add("Left over");
-            }
-
-            if (!facts.Contains("Personal code"))
-                facts.Add("Personal code");
-        }
-
-        if (model.IsRegistrationFeeCalculationRequired)
-        {
-            rules.Add(new Rule(schemas.First(x => x.PartnerType == PartnerTypeEnum.Registration)));
-            goals.Add("Registration fee");
-        }
-
-        _algorithm.Init(rules, facts, goals, new ConsoleLoggerService());
-
-        var res = _algorithm.Execute();
     }
 
-    void SearchInvalid(FormInvalidSubmitEventArgs args)
+    /// <summary>
+    /// Generates a chain of web services by type
+    /// </summary>
+    /// <param name="startingTypeIndex"></param>
+    /// <param name="startingService"></param>
+    /// <param name="webServices"></param>
+    /// <param name="types"></param>
+    /// <returns></returns>
+    private IEnumerable<KeyValuePair<WebServiceTypeEnum, WebService>> GenerateChain(int startingTypeIndex,
+                                                                                    WebService startingService,
+                                                                                    IEnumerable<WebService> webServices,
+                                                                                    WebServiceTypeEnum[] types)
     {
-        var errors = args.Errors;
-        //_notificationService.Notify(NotificationSeverity.Error,
-        //                            "Klaida.",
-        //                            string.Join(",", errors));
+        var chain = new List<KeyValuePair<WebServiceTypeEnum, WebService>>();
+        chain.Add(new KeyValuePair<WebServiceTypeEnum, WebService>(types[startingTypeIndex], startingService));
+
+        if (startingTypeIndex + 1 == types.Count())
+            return chain;
+
+        var nextType = types[++startingTypeIndex];
+        var nextTypeServices = webServices.Where(x => x.Type == nextType).ToList();
+
+        foreach (var webService in nextTypeServices)
+        {
+            var partialChain = GenerateChain(startingTypeIndex, webService, webServices, types);
+            chain.AddRange(partialChain);
+        }
+
+        return chain;
     }
 
 }

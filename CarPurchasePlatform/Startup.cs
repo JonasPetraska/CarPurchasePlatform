@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Radzen;
+using Radzen.Blazor.GridColumnVisibilityChooser.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,18 +43,21 @@ namespace CarPurchasePlatform
             services.AddSingleton<IYearRepository, InMemoryYearRepository>();
             services.AddSingleton<IYearService, DefaultYearService>();
 
-            services.AddSingleton<IPartnerRepository, JsonPartnerRepository>();
-            services.AddSingleton<IPartnerService, DefaultPartnerService>();
+            services.AddSingleton<IWebServiceRepository, JsonWebServiceRepository>();
+            services.AddSingleton<IWebServiceService, DefaultWebServiceService>();
 
-            services.AddSingleton<IPartnerSchemaRepository, InMemoryPartnerSchemaRepository>();
-            services.AddSingleton<IPartnerSchemaService, DefaultPartnerSchemaService>();
+            services.AddSingleton<IWebServiceSchemaRepository, InMemoryWebServiceSchemaRepository>();
+            services.AddSingleton<IWebServiceSchemaService, DefaultWebServiceSchemaService>();
 
             services.AddSingleton<ILoggerService, ConsoleLoggerService>();
 
             services.AddScoped<DialogService>();
             services.AddScoped<NotificationService>();
 
-            services.AddScoped<IAlgorithm, ForwardChainingAlgorithm>();
+            services.AddScoped<IPlanningAlgorithm, BackwardChainingAlgorithm>();
+            services.AddScoped<IPlanExecutionerService, DefaultPlanExecutionerService>();
+
+            services.ConfigureColumnVisibility();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
